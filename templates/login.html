@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cartalyst - Automotive Parts Management</title>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            min-height: 100vh;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        /* Login Page Styles */
+        .login-container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            padding: 2.5rem;
+            width: 100%;
+            max-width: 450px;
+            position: relative;
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .login-logo {
+            width: 80px;
+            height: 80px;
+            background: #3b82f6;
+            border-radius: 16px;
+            margin: 0 auto 1.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            font-weight: 700;
+            color: white;
+            box-shadow: 0 8px 16px rgba(59, 130, 246, 0.3);
+        }
+
+        .login-title {
+            font-size: 2.25rem;
+            font-weight: 700;
+            color: #1e3a8a;
+            margin-bottom: 0.75rem;
+        }
+
+        .login-subtitle {
+            color: #64748b;
+            font-size: 1.125rem;
+            font-weight: 500;
+        }
+
+        .role-indicator {
+            display: inline-block;
+            background: #dbeafe;
+            color: #1e3a8a;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-weight: 600;
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.75rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #374151;
+            font-size: 0.875rem;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+            outline: none;
+        }
+
+        .form-input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .form-input::placeholder {
+            color: #94a3b8;
+        }
+
+        .login-btn {
+            width: 100%;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 1rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-top: 1rem;
+        }
+
+        .login-btn:hover {
+            background: #2563eb;
+        }
+
+        .login-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        .error-message {
+            background: #fee2e2;
+            border: 1px solid #fecaca;
+            color: #b91c1c;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            font-size: 0.875rem;
+            display: none;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            background: none;
+            border: none;
+            color: #3b82f6;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 1.5rem;
+            padding: 0;
+        }
+
+        .back-btn:hover {
+            color: #1e3a8a;
+        }
+
+        .back-btn svg {
+            margin-right: 0.25rem;
+            width: 16px;
+            height: 16px;
+        }
+
+        .help-text {
+            text-align: center;
+            margin-top: 1.5rem;
+            color: #64748b;
+            font-size: 0.875rem;
+        }
+
+        .demo-credentials {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1.5rem;
+            font-size: 0.875rem;
+        }
+
+        .demo-credentials h4 {
+            color: #475569;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .demo-credentials p {
+            color: #64748b;
+            margin-bottom: 0.25rem;
+        }
+
+        .demo-credentials strong {
+            color: #334155;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Role Selection */
+        .role-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .role-button {
+            flex: 1;
+            padding: 1rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            background: white;
+            color: #64748b;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+
+        .role-button.active {
+            border-color: #3b82f6;
+            background: #eff6ff;
+            color: #1e3a8a;
+        }
+
+        .role-button:hover:not(.active) {
+            border-color: #cbd5e1;
+            background: #f8fafc;
+        }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            .login-container {
+                padding: 2rem 1.5rem;
+            }
+            
+            .login-title {
+                font-size: 1.75rem;
+            }
+            
+            .login-subtitle {
+                font-size: 1rem;
+            }
+            
+            .role-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <div class="login-logo">C</div>
+            <h1 class="login-title">Cartalyst</h1>
+            <p class="login-subtitle">Automotive Parts Management</p>
+            <div class="role-indicator" id="roleIndicator">Customer</div>
+        </div>
+
+        <div class="error-message" id="errorMessage">
+            {% if error %}
+            {{ error }}
+            {% endif %}
+        </div>
+
+        <div id="roleSelectionContainer">
+            <h2 style="margin-bottom: 1rem; font-size: 1.25rem; color: #334155;">Select your role to continue:</h2>
+            <div class="role-buttons">
+                <button id="customerRoleBtn" class="role-button active" onclick="selectRole('customer')">
+                    Customer
+                </button>
+                <button id="employeeRoleBtn" class="role-button" onclick="selectRole('employee')">
+                    Employee
+                </button>
+            </div>
+        </div>
+
+        <form id="loginForm" style="display: none;" action="/login" method="POST">
+            <!-- Hidden role field -->
+            <input type="hidden" id="role" name="role" value="customer">
+            
+            <div class="form-group">
+                <label class="form-label" for="username">Username</label>
+                <input
+                    type="text"
+                    id="username"
+                    name="username"
+                    class="form-input"
+                    placeholder="Enter your username"
+                    required
+                    autocomplete="username"
+                >
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="password">Password</label>
+                <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    class="form-input"
+                    placeholder="Enter your password"
+                    required
+                    autocomplete="current-password"
+                >
+            </div>
+
+            <button type="submit" class="login-btn" id="loginButton">
+                <span id="buttonText">Sign In</span>
+            </button>
+
+            <button type="button" class="back-btn" style="display: block; margin-top: 1rem;" onclick="showRoleSelection()">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="16" height="16">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Back to role selection
+            </button>
+        </form>
+
+        <div class="demo-credentials">
+            <h4>Demo Credentials</h4>
+            <p><strong>Customer:</strong> customer / password</p>
+            <p><strong>Employee:</strong> employee / password</p>
+        </div>
+
+        <p class="help-text">
+            Need help? Contact support@cartalyst.com
+        </p>
+    </div>
+
+    <script>
+        // Application State
+        let currentUser = {
+            role: null,
+            isLoggedIn: false,
+            email: null
+        };
+
+        // DOM Elements
+        const roleSelectionContainer = document.getElementById('roleSelectionContainer');
+        const loginForm = document.getElementById('loginForm');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const loginButton = document.getElementById('loginButton');
+        const buttonText = document.getElementById('buttonText');
+        const errorMessage = document.getElementById('errorMessage');
+        const roleIndicator = document.getElementById('roleIndicator');
+        const customerRoleBtn = document.getElementById('customerRoleBtn');
+        const employeeRoleBtn = document.getElementById('employeeRoleBtn');
+
+        // Initialize App
+        function initApp() {
+            // Check if we have a role from the dashboard page
+            const savedRole = sessionStorage.getItem('userRole');
+            
+            if (savedRole) {
+                // Set the role and show login form
+                selectRole(savedRole);
+            }
+        }
+
+        // Role Selection
+        function showRoleSelection() {
+            roleSelectionContainer.style.display = 'block';
+            loginForm.style.display = 'none';
+            sessionStorage.removeItem('userRole');
+            currentUser.role = null;
+            roleIndicator.style.display = 'none';
+            
+            // Reset active state
+            customerRoleBtn.classList.remove('active');
+            employeeRoleBtn.classList.remove('active');
+            customerRoleBtn.classList.add('active');
+        }
+
+        function selectRole(role) {
+            currentUser.role = role;
+            sessionStorage.setItem('userRole', role);
+            
+            // Set the hidden role field
+            document.getElementById('role').value = role;
+            
+            // Update UI
+            roleSelectionContainer.style.display = 'none';
+            loginForm.style.display = 'block';
+            
+            // Update role indicator
+            roleIndicator.textContent = role.charAt(0).toUpperCase() + role.slice(1);
+            roleIndicator.style.display = 'inline-block';
+            
+            // Update button text and placeholder
+            if (role === 'customer') {
+                buttonText.textContent = 'Sign In as Customer';
+                document.getElementById('username').placeholder = 'customer';
+                customerRoleBtn.classList.add('active');
+                employeeRoleBtn.classList.remove('active');
+            } else {
+                buttonText.textContent = 'Sign In as Employee';
+                document.getElementById('username').placeholder = 'employee';
+                employeeRoleBtn.classList.add('active');
+                customerRoleBtn.classList.remove('active');
+            }
+            
+            // Focus on username input
+            setTimeout(() => document.getElementById('username').focus(), 100);
+        }
+
+        // Form Validation - Basic client-side validation
+        function validateForm() {
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            
+            if (!username) {
+                showError('Please enter a username');
+                document.getElementById('username').focus();
+                return false;
+            }
+            
+            if (!password) {
+                showError('Please enter a password');
+                document.getElementById('password').focus();
+                return false;
+            }
+            
+            return true;
+        }
+
+        // Login Submission - Now using server-side form submission
+        loginForm.addEventListener('submit', (e) => {
+            if (!validateForm()) {
+                e.preventDefault();
+                return;
+            }
+            
+            // Show loading state
+            loginButton.disabled = true;
+            buttonText.innerHTML = '<span class="spinner"></span>Signing In...';
+            
+            // Form will be submitted to the server
+        });
+
+        // Utility Functions
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+        }
+
+        function hideError() {
+            errorMessage.style.display = 'none';
+        }
+
+        // Input Enhancements
+        document.querySelectorAll('.form-input').forEach(input => {
+            input.addEventListener('input', () => hideError());
+        });
+
+        // Initialize the application
+        initApp();
+    </script>
+</body>
+</html>
