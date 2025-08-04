@@ -1,0 +1,1 @@
+flask scikit-learn pandas groq python-dotenv 

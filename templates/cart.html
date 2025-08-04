@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shopping Cart - Cartalyst</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Header Navigation -->
+    <header class="bg-white border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <div class="flex items-center space-x-4">
+                    <h1 class="text-2xl font-bold text-gray-800">Cartalyst</h1>
+                    {% if session.get('user_role') == 'employee' %}
+                    <span class="bg-green-100 text-green-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">Employee</span>
+                    {% else %}
+                    <span class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">Customer</span>
+                    {% endif %}
+                </div>
+                <!-- Navigation Links -->
+                <div class="flex items-center space-x-6">
+                    <a href="{{ url_for('dashboard') }}" class="text-sm font-medium text-gray-600 hover:text-gray-900">Dashboard</a>
+                    <a href="{{ url_for('orders') }}" class="text-sm font-medium text-gray-600 hover:text-gray-900">Orders</a>
+                    <a href="{{ url_for('logout') }}" class="text-sm font-medium text-gray-600 hover:text-gray-900">Logout</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <!-- Breadcrumb Navigation -->
+        <nav class="flex mb-8" aria-label="Breadcrumb">
+            <ol class="inline-flex items-center space-x-1 md:space-x-3">
+                <li class="inline-flex items-center">
+                    <a href="{{ url_for('dashboard') }}" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600">
+                        <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"></path></svg>
+                        Dashboard
+                    </a>
+                </li>
+                <li>
+                    <div class="flex items-center">
+                        <svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path></svg>
+                        <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2">Shopping Cart</span>
+                    </div>
+                </li>
+            </ol>
+        </nav>
+
+        <!-- Cart Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Shopping Cart</h1>
+            <p class="text-gray-600">Review your selected items before checkout</p>
+        </div>
+
+        {% if cart_items %}
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Cart Items -->
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-lg border border-gray-200 shadow-sm">
+                    <div class="p-6">
+                        <h2 class="text-lg font-semibold text-gray-900 mb-4">Items in Cart ({{ cart_items|length }})</h2>
+                        <div class="space-y-4">
+                            {% for item in cart_items %}
+                            <div class="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg" data-part-no="{{ item.part_no }}">
+                                <!-- Part Image -->
+                                <div class="flex-shrink-0">
+                                    <div class="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
+                                        <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+                                        </svg>
+                                    </div>
+                                </div>
+                                
+                                <!-- Part Details -->
+                                <div class="flex-1 min-w-0">
+                                    <h3 class="text-sm font-medium text-gray-900 truncate">{{ item.PartDescription }}</h3>
+                                    <p class="text-sm text-gray-500">Part No: {{ item.part_no }}</p>
+                                    <p class="text-sm text-gray-500">{{ item.VehicleMake }}</p>
+                                    <p class="text-sm font-medium text-blue-600">₹{{ "%.2f"|format(item.Rate) }}</p>
+                                </div>
+                                
+                                <!-- Quantity Controls -->
+                                <div class="flex items-center space-x-2">
+                                    <button onclick="updateQuantity('{{ item.part_no }}', {{ item.quantity - 1 }})" 
+                                            class="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/>
+                                        </svg>
+                                    </button>
+                                    <span class="w-8 text-center font-medium">{{ item.quantity }}</span>
+                                    <button onclick="updateQuantity('{{ item.part_no }}', {{ item.quantity + 1 }})" 
+                                            class="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                                
+                                <!-- Item Total -->
+                                <div class="text-right">
+                                    <p class="text-sm font-medium text-gray-900">₹{{ "%.2f"|format(item.Rate * item.quantity) }}</p>
+                                </div>
+                                
+                                <!-- Remove Button -->
+                                <button onclick="removeFromCart('{{ item.part_no }}')" 
+                                        class="text-red-600 hover:text-red-800 p-1">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Order Summary -->
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-lg border border-gray-200 shadow-sm sticky top-6">
+                    <div class="p-6">
+                        <h2 class="text-lg font-semibold text-gray-900 mb-4">Order Summary</h2>
+                        
+                        <div class="space-y-3 mb-6">
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-600">Subtotal</span>
+                                <span class="font-medium">₹{{ "%.2f"|format(total_amount) }}</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-600">Tax (18% GST)</span>
+                                <span class="font-medium">₹{{ "%.2f"|format(total_amount * 0.18) }}</span>
+                            </div>
+                            <div class="border-t border-gray-200 pt-3">
+                                <div class="flex justify-between">
+                                    <span class="text-base font-medium text-gray-900">Total</span>
+                                    <span class="text-base font-medium text-gray-900">₹{{ "%.2f"|format(total_amount * 1.18) }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button onclick="checkout()" 
+                                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors">
+                            Proceed to Checkout
+                        </button>
+                        
+                        <div class="mt-4 text-center">
+                            <a href="{{ url_for('dashboard') }}" class="text-sm text-blue-600 hover:text-blue-800">
+                                Continue Shopping
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        {% else %}
+        <!-- Empty Cart -->
+        <div class="text-center py-12">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.5 6M7 13l-1.5-6m0 0L4 5M7 13h10m-10 0l1.5 6m8.5-6v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6"/>
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-gray-900">Your cart is empty</h3>
+            <p class="mt-1 text-sm text-gray-500">Start shopping to add items to your cart.</p>
+            <div class="mt-6">
+                <a href="{{ url_for('dashboard') }}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
+                    Start Shopping
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </main>
+
+    <!-- Success/Error Messages -->
+    <div id="message" class="fixed top-4 right-4 z-50 hidden">
+        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
+            <span id="message-text"></span>
+        </div>
+    </div>
+
+    <script>
+        // Cart management functions
+        async function updateQuantity(partNo, newQuantity) {
+            try {
+                const response = await fetch('/api/cart/update', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        part_no: partNo,
+                        quantity: newQuantity
+                    })
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    location.reload(); // Refresh to show updated cart
+                } else {
+                    showMessage(data.error || 'Failed to update quantity', 'error');
+                }
+            } catch (error) {
+                showMessage('Error updating quantity', 'error');
+            }
+        }
+        
+        async function removeFromCart(partNo) {
+            if (!confirm('Are you sure you want to remove this item from your cart?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/cart/remove', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        part_no: partNo
+                    })
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    location.reload(); // Refresh to show updated cart
+                } else {
+                    showMessage(data.error || 'Failed to remove item', 'error');
+                }
+            } catch (error) {
+                showMessage('Error removing item', 'error');
+            }
+        }
+        
+        async function checkout() {
+            try {
+                const response = await fetch('/api/cart/checkout', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    showMessage('Order placed successfully!', 'success');
+                    setTimeout(() => {
+                        window.location.href = '/orders';
+                    }, 2000);
+                } else {
+                    showMessage(data.error || 'Failed to place order', 'error');
+                }
+            } catch (error) {
+                showMessage('Error during checkout', 'error');
+            }
+        }
+        
+        function showMessage(text, type = 'success') {
+            const messageDiv = document.getElementById('message');
+            const messageText = document.getElementById('message-text');
+            
+            messageText.textContent = text;
+            
+            // Update styling based on type
+            const alertDiv = messageDiv.querySelector('div');
+            if (type === 'error') {
+                alertDiv.className = 'bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative';
+            } else {
+                alertDiv.className = 'bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative';
+            }
+            
+            messageDiv.classList.remove('hidden');
+            
+            setTimeout(() => {
+                messageDiv.classList.add('hidden');
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

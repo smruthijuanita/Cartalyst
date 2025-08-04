@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ part.PartDescription }} - Cartalyst</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Header Navigation -->
+    <header class="bg-white border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-4">
+                    <h1 class="text-2xl font-bold text-gray-800">Cartalyst</h1>
+                    {% if session.get('user_role') == 'employee' %}
+                    <span class="bg-green-100 text-green-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">Employee</span>
+                    {% else %}
+                    <span class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">Customer</span>
+                    {% endif %}
+                </div>
+                <div class="flex items-center space-x-6">
+                    <a href="{{ url_for('dashboard') }}" class="text-sm font-medium text-gray-600 hover:text-gray-900">Dashboard</a>
+                    <a href="{{ url_for('cart') }}" class="text-sm font-medium text-gray-600 hover:text-gray-900">Cart</a>
+                    <a href="{{ url_for('logout') }}" class="text-sm font-medium text-gray-600 hover:text-gray-900">Logout</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <!-- Breadcrumb Navigation -->
+        <nav class="flex mb-8" aria-label="Breadcrumb">
+            <ol class="inline-flex items-center space-x-1 md:space-x-3">
+                <li class="inline-flex items-center">
+                    <a href="{{ url_for('dashboard') }}" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600">
+                        <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"></path></svg>
+                        Dashboard
+                    </a>
+                </li>
+                <li>
+                    <div class="flex items-center">
+                        <svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path></svg>
+                        <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2">Part Details</span>
+                    </div>
+                </li>
+            </ol>
+        </nav>
+
+        <!-- Part Details -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Part Image -->
+            <div class="aspect-w-1 aspect-h-1">
+                <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-8">
+                    {% if part.ImageURL %}
+                    <img src="{{ part.ImageURL }}" alt="{{ part.PartDescription }}" class="w-full h-96 object-cover rounded-lg">
+                    {% else %}
+                    <div class="w-full h-96 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg flex items-center justify-center">
+                        <svg class="w-24 h-24 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+                        </svg>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Part Information -->
+            <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-8">
+                <h1 class="text-3xl font-bold text-gray-900 mb-4">{{ part.get('CleanedDescription', part.PartDescription) }}</h1>
+                
+                <div class="space-y-4 mb-8">
+                    <div class="flex justify-between items-center py-2 border-b border-gray-200">
+                        <span class="font-medium text-gray-600">Part Number:</span>
+                        <span class="text-gray-900 font-mono">{{ part.PartNo }}</span>
+                    </div>
+                    
+                    <div class="flex justify-between items-center py-2 border-b border-gray-200">
+                        <span class="font-medium text-gray-600">Category:</span>
+                        <span class="text-gray-900">{{ part.Category }}</span>
+                    </div>
+                    
+                    {% if part.VehicleMake %}
+                    <div class="flex justify-between items-center py-2 border-b border-gray-200">
+                        <span class="font-medium text-gray-600">Vehicle Make:</span>
+                        <span class="text-gray-900">{{ part.VehicleMake }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if part.Source %}
+                    <div class="flex justify-between items-center py-2 border-b border-gray-200">
+                        <span class="font-medium text-gray-600">Source:</span>
+                        <span class="text-gray-900">{{ part.Source }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="flex justify-between items-center py-2 border-b border-gray-200">
+                        <span class="font-medium text-gray-600">Stock Available:</span>
+                        <span class="{% if part.Quantity < 2 %}text-red-600 font-semibold{% else %}text-green-600{% endif %}">
+                            {{ part.Quantity }} units
+                        </span>
+                    </div>
+                    
+                    <div class="flex justify-between items-center py-2">
+                        <span class="font-medium text-gray-600">Price:</span>
+                        <span class="text-2xl font-bold text-blue-600">₹{{ "%.2f"|format(part.Rate) }}</span>
+                    </div>
+                </div>
+
+                <!-- Add to Cart Section -->
+                <div class="space-y-4">
+                    <div class="flex items-center space-x-4">
+                        <label for="quantity" class="font-medium text-gray-600">Quantity:</label>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="decreaseQuantity()" class="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/>
+                                </svg>
+                            </button>
+                            <input type="number" id="quantity" value="1" min="1" max="{{ part.Quantity }}" 
+                                   class="w-16 text-center border border-gray-300 rounded-md py-1">
+                            <button onclick="increaseQuantity()" class="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <button onclick="addToCart()" 
+                            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition-colors flex items-center justify-center space-x-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.5 6M7 13l-1.5-6m0 0L4 5M7 13h10m-10 0l1.5 6m8.5-6v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6"/>
+                        </svg>
+                        <span>Add to Cart</span>
+                    </button>
+                    
+                    <div class="flex space-x-4">
+                        <a href="{{ url_for('dashboard') }}" 
+                           class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-lg transition-colors text-center">
+                            Continue Shopping
+                        </a>
+                        <a href="{{ url_for('cart') }}" 
+                           class="flex-1 bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors text-center">
+                            View Cart
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Success/Error Messages -->
+    <div id="message" class="fixed top-4 right-4 z-50 hidden">
+        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
+            <span id="message-text"></span>
+        </div>
+    </div>
+
+    <script>
+        const maxQuantity = {{ part.Quantity }};
+        
+        function increaseQuantity() {
+            const quantityInput = document.getElementById('quantity');
+            const currentValue = parseInt(quantityInput.value);
+            if (currentValue < maxQuantity) {
+                quantityInput.value = currentValue + 1;
+            }
+        }
+        
+        function decreaseQuantity() {
+            const quantityInput = document.getElementById('quantity');
+            const currentValue = parseInt(quantityInput.value);
+            if (currentValue > 1) {
+                quantityInput.value = currentValue - 1;
+            }
+        }
+        
+        async function addToCart() {
+            const quantity = parseInt(document.getElementById('quantity').value);
+            
+            try {
+                const response = await fetch('/api/cart/add', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        part_no: '{{ part.PartNo }}',
+                        quantity: quantity
+                    })
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    showMessage('Item added to cart successfully!', 'success');
+                } else {
+                    showMessage(data.error || 'Failed to add item to cart', 'error');
+                }
+            } catch (error) {
+                showMessage('Error adding item to cart', 'error');
+            }
+        }
+        
+        function showMessage(text, type = 'success') {
+            const messageDiv = document.getElementById('message');
+            const messageText = document.getElementById('message-text');
+            
+            messageText.textContent = text;
+            
+            // Update styling based on type
+            const alertDiv = messageDiv.querySelector('div');
+            if (type === 'error') {
+                alertDiv.className = 'bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative';
+            } else {
+                alertDiv.className = 'bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative';
+            }
+            
+            messageDiv.classList.remove('hidden');
+            
+            setTimeout(() => {
+                messageDiv.classList.add('hidden');
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

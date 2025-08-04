@@ -5,24 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cartalyst - Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Inter', sans-serif; }
-        /* A little animation for chat messages */
-        .chat-message { animation: fadeIn 0.3s ease-in-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        /* Simple spinner for the typing indicator */
-        .dot-spinner span {
-            display: inline-block;
-            animation: bounce 1.4s infinite ease-in-out both;
-        }
-        .dot-spinner span:nth-of-type(2) { animation-delay: -0.32s; }
-        .dot-spinner span:nth-of-type(3) { animation-delay: -0.16s; }
-        @keyframes bounce {
-            0%, 80%, 100% { transform: scale(0); }
-            40% { transform: scale(1.0); }
-        }
-    </style>
+    <style> body { font-family: 'Inter', sans-serif; } </style>
 </head>
 <body class="bg-gray-50 text-gray-800">
 
@@ -38,6 +23,15 @@
                     {% endif %}
                 </div>
                 <div class="flex items-center space-x-6">
+                    {% if not is_employee %}
+                    <a href="{{ url_for('cart') }}" class="text-sm font-medium text-gray-600 hover:text-gray-900 flex items-center space-x-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.5 6M7 13l-1.5-6m0 0L4 5M7 13h10m-10 0l1.5 6m8.5-6v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6"/>
+                        </svg>
+                        <span>Cart</span>
+                    </a>
+                    <a href="{{ url_for('orders') }}" class="text-sm font-medium text-gray-600 hover:text-gray-900">Orders</a>
+                    {% endif %}
                     <a href="{{ url_for('logout') }}" class="text-sm font-medium text-gray-600 hover:text-gray-900">Logout</a>
                 </div>
             </div>
@@ -45,210 +39,418 @@
     </header>
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-            {% for category, message in messages %}
-              <div class="p-4 mb-4 rounded-md {{ 'bg-blue-100 text-blue-700' if category == 'success' else 'bg-red-100 text-red-700' }}" role="alert">
-                {{ message }}
-              </div>
-            {% endfor %}
-          {% endif %}
-        {% endwith %}
-
         {% if is_employee %}
+        <!-- Employee View -->
         <div class="space-y-2 mb-10">
-            <h2 class="text-3xl font-bold text-gray-900">Employee Insights Dashboard</h2>
-            <p class="text-gray-500">Overview of inventory and sales performance.</p>
+            <h2 class="text-3xl font-bold text-gray-900">Employee Analytics Dashboard</h2>
+            <p class="text-gray-500">Comprehensive insights into inventory, sales performance, and revenue analytics.</p>
         </div>
         
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div class="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
+        <!-- Key Metrics Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <a href="{{ url_for('insights') }}" class="block bg-indigo-600 p-6 rounded-lg border border-indigo-700 shadow-sm hover:bg-indigo-700 transition-colors text-white">
+                <h4 class="text-sm font-medium uppercase">AI Analytics</h4>
+                <p class="text-3xl font-bold mt-2">Run Model</p>
+                <p class="text-sm mt-1 opacity-80">Get AI-powered ordering recommendations.</p>
+            </a>
+            <div class="bg-white p-6 rounded-lg border shadow-sm">
                 <h4 class="text-sm font-medium text-gray-500 uppercase">Total Inventory Value</h4>
-                <p class="text-3xl font-bold text-gray-900 mt-2">₹{{ "%.2f"|format(insights.total_inventory_value) }}</p>
+                <p class="text-3xl font-bold mt-2 text-green-600">${{ "%.2f"|format(insights.total_inventory_value / 80) }}</p>
+                <p class="text-sm text-gray-500 mt-1">Current stock value</p>
             </div>
-            <div class="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-                <h4 class="text-sm font-medium text-gray-500 uppercase">Unique Suppliers</h4>
-                <p class="text-3xl font-bold text-gray-900 mt-2">{{ insights.parts_per_supplier|length }}</p>
+            <div class="bg-white p-6 rounded-lg border shadow-sm">
+                <h4 class="text-sm font-medium text-gray-500 uppercase">Total Transactions</h4>
+                <p class="text-3xl font-bold mt-2 text-blue-600">{{ insights.total_transactions }}</p>
+                <p class="text-sm text-gray-500 mt-1">All-time sales</p>
             </div>
-            <div class="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
+            <div class="bg-white p-6 rounded-lg border shadow-sm">
                 <h4 class="text-sm font-medium text-gray-500 uppercase">Low Stock Alerts</h4>
                 <p class="text-3xl font-bold text-red-600 mt-2">{{ insights.low_stock_items|length }}</p>
+                <p class="text-sm text-gray-500 mt-1">Items need restocking</p>
             </div>
         </div>
 
+        <!-- Compact Charts Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <!-- Revenue by Category Chart -->
+            <div class="bg-white p-4 rounded-lg border shadow-sm">
+                <h3 class="text-md font-semibold text-gray-900 mb-3">Revenue by Category</h3>
+                <div class="h-48">
+                    <canvas id="categoryRevenueChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Fast Moving Items Chart -->
+            <div class="bg-white p-4 rounded-lg border shadow-sm">
+                <h3 class="text-md font-semibold text-gray-900 mb-3">Top Selling Parts</h3>
+                <div class="h-48">
+                    <canvas id="fastMovingChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Monthly Revenue Trend -->
+            <div class="bg-white p-4 rounded-lg border shadow-sm">
+                <h3 class="text-md font-semibold text-gray-900 mb-3">Monthly Revenue</h3>
+                <div class="h-48">
+                    <canvas id="monthlyRevenueChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Additional Analytics -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div class="bg-white p-6 rounded-lg border border-red-200 shadow-sm">
-                <h4 class="text-lg font-semibold text-red-600 uppercase flex items-center mb-4">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-                    Low Stock Items (Qty < 2)
-                </h4>
-                <div class="overflow-y-auto max-h-80">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50 sticky top-0">
-                            <tr>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Description</th>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Qty</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for part in insights.low_stock_items %}
-                            <tr class="hover:bg-gray-50">
-                                <td class="px-3 py-2 text-sm">{{ part.PartDescription }}</td>
-                                <td class="px-3 py-2 text-sm text-red-500 font-bold">{{ part.Quantity }}</td>
-                            </tr>
-                            {% else %}
-                            <tr><td colspan="2" class="px-3 py-4 text-sm text-gray-500 text-center">No low stock items. Great job!</td></tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+            <!-- Top Suppliers -->
+            <div class="bg-white p-6 rounded-lg border shadow-sm">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Top Suppliers by Revenue</h3>
+                <div class="space-y-3">
+                    {% for supplier in insights.top_suppliers[:5] %}
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <span class="font-medium text-gray-900">{{ supplier.name }}</span>
+                        <span class="text-green-600 font-semibold">${{ "%.2f"|format(supplier.revenue / 80) }}</span>
+                    </div>
+                    {% endfor %}
                 </div>
             </div>
 
-            <div class="bg-white p-6 rounded-lg border border-blue-200 shadow-sm">
-                <h4 class="text-lg font-semibold text-blue-600 uppercase flex items-center mb-4">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                    Fast-Moving Items
-                </h4>
-                <div class="overflow-y-auto max-h-80">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50 sticky top-0">
-                            <tr>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Description</th>
-                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">Total Sold</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for item in insights.fast_moving_items %}
-                            <tr class="hover:bg-gray-50">
-                                <td class="px-3 py-2 text-sm">{{ item.PartDescription }}</td>
-                                <td class="px-3 py-2 text-sm font-bold">{{ item.TotalQuantitySold }}</td>
-                            </tr>
-                            {% else %}
-                            <tr><td colspan="2" class="px-3 py-4 text-sm text-gray-500 text-center">Not enough transaction data.</td></tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-        
-        {% else %}
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-            <div class="lg:sticky lg:top-24">
-                <div class="space-y-2 mb-6">
-                    <h2 class="text-3xl font-bold text-gray-900">Ask Our AI Assistant</h2>
-                    <p class="text-gray-500">Describe the part you need, and we'll find it for you!</p>
-                </div>
-                <div class="bg-white rounded-lg border border-gray-200 shadow-sm">
-                    <div id="chat-history" class="p-6 h-96 overflow-y-auto space-y-4">
-                        <div class="flex justify-start chat-message">
-                            <div class="bg-gray-100 text-gray-800 p-3 rounded-lg max-w-lg">
-                                <p>Welcome to Cartalyst! How can I help you find the right parts today?</p>
-                            </div>
+            <!-- Fast Moving Items List -->
+            <div class="bg-white p-6 rounded-lg border shadow-sm">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Fast Moving Items</h3>
+                <div class="space-y-3">
+                    {% for item in insights.fast_moving_items[:5] %}
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div>
+                            <p class="font-medium text-gray-900">{{ item.PartDescription }}</p>
+                            <p class="text-sm text-gray-500">{{ item.PartNo }}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-blue-600 font-semibold">{{ item.TotalTransactions }} sales</p>
+                            <p class="text-sm text-green-600">${{ "%.2f"|format(item.Revenue / 80) }}</p>
                         </div>
                     </div>
-                    <div class="p-4 border-t border-gray-200 bg-gray-50 rounded-b-lg">
-                        <form id="chat-form" class="flex items-center space-x-3">
-                            <input type="text" id="chat-input" placeholder="e.g., 'front brake pads for a Toyota'" class="w-full px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow">
-                            <button type="submit" class="bg-blue-600 text-white rounded-full p-2.5 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors flex-shrink-0">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 1.414L10.586 9H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z" clip-rule="evenodd" /></svg>
-                            </button>
-                        </form>
-                    </div>
+                    {% endfor %}
                 </div>
             </div>
+        </div>
 
+        {% else %}
+        <!-- Customer View -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+            <div class="lg:sticky lg:top-24">
+                <div class="space-y-2 mb-6"><h2 class="text-3xl font-bold text-gray-900">Ask Our AI Assistant</h2><p class="text-gray-500">Describe the part you need, and we'll find it for you!</p></div>
+                <div class="bg-white rounded-lg border"><div id="chat-history" class="p-6 h-96 overflow-y-auto space-y-4"><div class="flex justify-start"><div class="bg-gray-100 p-3 rounded-lg"><p>Welcome! How can I help you find a part?</p></div></div></div><div class="p-4 border-t bg-gray-50"><form id="chat-form" class="flex items-center space-x-3"><input type="text" id="chat-input" placeholder="e.g., 'brake pads for a Toyota'" class="w-full px-4 py-2 border rounded-full"><button type="submit" class="bg-blue-600 text-white rounded-full p-2.5 hover:bg-blue-700"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 1.414L10.586 9H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z" clip-rule="evenodd" /></svg></button></form></div></div>
+            </div>
             <div>
-                <div class="space-y-2 mb-6">
-                    <h2 class="text-3xl font-bold text-gray-900">Or Browse by Category</h2>
-                    <p class="text-gray-500">Select a category to see all available parts.</p>
-                </div>
+                <div class="space-y-2 mb-6"><h2 class="text-3xl font-bold text-gray-900">Or Browse by Category</h2><p class="text-gray-500">Explore our comprehensive automotive parts collection.</p></div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     {% for category, parts in categorized_parts.items() %}
-                    <a href="{{ url_for('view_parts_by_category', category_name=category) }}" class="block bg-white p-6 rounded-lg border border-gray-200 shadow-sm hover:shadow-md hover:border-blue-500 transition-all duration-300">
-                        <h3 class="text-lg font-semibold text-gray-900">{{ category }}</h3>
-                        <p class="mt-2 text-sm text-gray-600">{{ parts|length }} parts available</p>
+                    <a href="{{ url_for('view_parts_by_category', category_name=category) }}" class="group block bg-white p-6 rounded-lg border hover:border-blue-500 hover:shadow-lg transition-all duration-300">
+                        <div class="flex items-center space-x-3">
+                            {% if category == "Engine and Fuel" %}
+                            <div class="flex-shrink-0 w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center group-hover:bg-red-200 transition-colors">
+                                <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                                </svg>
+                            </div>
+                            {% elif category == "Body and Electrical" %}
+                            <div class="flex-shrink-0 w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center group-hover:bg-yellow-200 transition-colors">
+                                <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                                </svg>
+                            </div>
+                            {% elif category == "Powertrain and Chassis" %}
+                            <div class="flex-shrink-0 w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center group-hover:bg-blue-200 transition-colors">
+                                <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                </svg>
+                            </div>
+                            {% elif category == "Axle and Suspension" %}
+                            <div class="flex-shrink-0 w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center group-hover:bg-green-200 transition-colors">
+                                <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/>
+                                </svg>
+                            </div>
+                            {% else %}
+                            <div class="flex-shrink-0 w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center group-hover:bg-gray-200 transition-colors">
+                                <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+                                </svg>
+                            </div>
+                            {% endif %}
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">{{ category }}</h3>
+                                <p class="text-sm text-gray-500 mt-1">Professional quality automotive parts</p>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex items-center text-blue-600 text-sm font-medium">
+                            <span>Browse parts</span>
+                            <svg class="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                            </svg>
+                        </div>
                     </a>
-                    {% else %}
-                    <p class="text-gray-500">No categories found.</p>
                     {% endfor %}
                 </div>
             </div>
         </div>
         {% endif %}
-        </main>
+    </main>
 
     <script>
+        // Dashboard JavaScript for chatbot and analytics
         document.addEventListener('DOMContentLoaded', () => {
+            // Chatbot functionality
             const chatForm = document.getElementById('chat-form');
-            if (!chatForm) return; // Only run script if chat form exists
+            if (chatForm) {
+                const chatInput = document.getElementById('chat-input');
+                const chatHistory = document.getElementById('chat-history');
 
-            const chatInput = document.getElementById('chat-input');
-            const chatHistory = document.getElementById('chat-history');
-
-            const addMessage = (message, sender) => {
-                const messageDiv = document.createElement('div');
-                messageDiv.classList.add('chat-message', 'flex', 'items-end', sender === 'user' ? 'justify-end' : 'justify-start');
-                
-                const bubble = document.createElement('div');
-                bubble.classList.add('px-4', 'py-2', 'rounded-xl', 'max-w-lg', 'break-words');
-                if (sender === 'user') {
-                    bubble.classList.add('bg-blue-600', 'text-white');
-                } else {
-                    bubble.classList.add('bg-gray-100', 'text-gray-800');
-                    // Use innerHTML to render markdown formatting from the bot
-                    bubble.innerHTML = message.replace(/\n/g, '<br>');
-                }
-                
-                messageDiv.appendChild(bubble);
-                chatHistory.appendChild(messageDiv);
-                chatHistory.scrollTop = chatHistory.scrollHeight;
-            };
-            
-            const showTypingIndicator = () => {
-                const existingIndicator = document.getElementById('typing-indicator');
-                if (existingIndicator) return;
-
-                const typingDiv = document.createElement('div');
-                typingDiv.id = 'typing-indicator';
-                typingDiv.classList.add('flex', 'justify-start', 'chat-message');
-                typingDiv.innerHTML = `<div class="bg-gray-100 text-gray-500 px-4 py-3 rounded-xl max-w-lg dot-spinner"><span>.</span><span>.</span><span>.</span></div>`;
-                chatHistory.appendChild(typingDiv);
-                chatHistory.scrollTop = chatHistory.scrollHeight;
-            };
-
-            chatForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const userMessage = chatInput.value.trim();
-                if (!userMessage) return;
-
-                addMessage(userMessage, 'user');
-                chatInput.value = '';
-                showTypingIndicator();
-
-                try {
-                    const response = await fetch('/api/chat', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ message: userMessage })
-                    });
+                const addMessage = (message, sender) => {
+                    const bubble = document.createElement('div');
+                    bubble.className = `flex justify-${sender === 'user' ? 'end' : 'start'}`;
                     
-                    document.getElementById('typing-indicator')?.remove();
-
-                    if (!response.ok) {
-                        addMessage('Sorry, an error occurred on our end.', 'bot');
-                        return;
+                    // Convert markdown-style links to HTML links for bot messages
+                    let processedMessage = message;
+                    if (sender === 'bot') {
+                        processedMessage = message.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-blue-600 hover:text-blue-800 underline">$1</a>');
                     }
+                    
+                    bubble.innerHTML = `<div class="px-4 py-2 rounded-xl max-w-lg break-words ${sender === 'user' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-800'}">${processedMessage.replace(/\n/g, '<br>')}</div>`;
+                    chatHistory.appendChild(bubble);
+                    chatHistory.scrollTop = chatHistory.scrollHeight;
+                };
 
-                    const data = await response.json();
-                    addMessage(data.reply, 'bot');
+                chatForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const userMessage = chatInput.value.trim();
+                    if (!userMessage) return;
+                    addMessage(userMessage, 'user');
+                    chatInput.value = '';
+                    addMessage('...', 'bot');
 
-                } catch (error) {
-                    document.getElementById('typing-indicator')?.remove();
-                    addMessage('I seem to be offline. Please check your connection and try again.', 'bot');
-                    console.error('Chat error:', error);
-                }
-            });
+                    try {
+                        const response = await fetch('/api/chat', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ message: userMessage })
+                        });
+                        chatHistory.lastChild.remove();
+                        const data = await response.json();
+                        addMessage(data.reply, 'bot');
+                    } catch (error) {
+                        chatHistory.lastChild.remove();
+                        addMessage('I seem to be offline. Please try again.', 'bot');
+                    }
+                });
+            }
+
+            // Analytics Charts (Employee Dashboard)
+            {% if is_employee %}
+            // Chart.js configuration
+            Chart.defaults.font.family = 'Inter, sans-serif';
+            Chart.defaults.color = '#6B7280';
+
+            // Revenue by Category Pie Chart
+            const categoryRevenueCtx = document.getElementById('categoryRevenueChart');
+            if (categoryRevenueCtx) {
+                const categoryData = {{ insights.category_revenue | tojson }};
+                const categoryLabels = Object.keys(categoryData);
+                const categoryValues = Object.values(categoryData);
+                
+                new Chart(categoryRevenueCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: categoryLabels,
+                        datasets: [{
+                            data: categoryValues,
+                            backgroundColor: [
+                                '#EF4444', // Red for Engine and Fuel
+                                '#F59E0B', // Yellow for Body and Electrical
+                                '#3B82F6', // Blue for Powertrain and Chassis
+                                '#10B981', // Green for Axle and Suspension
+                                '#6B7280'  // Gray for Others
+                            ],
+                            borderWidth: 2,
+                            borderColor: '#FFFFFF'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    padding: 20,
+                                    usePointStyle: true
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return context.label + ': $' + (context.parsed / 80).toLocaleString();
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Fast Moving Items Bar Chart
+            const fastMovingCtx = document.getElementById('fastMovingChart');
+            if (fastMovingCtx) {
+                const fastMovingData = {{ insights.fast_moving_items[:5] | tojson }};
+                const partLabels = fastMovingData.map(item => item.PartDescription.substring(0, 20) + '...');
+                const transactionCounts = fastMovingData.map(item => item.TotalTransactions);
+                
+                new Chart(fastMovingCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: partLabels,
+                        datasets: [{
+                            label: 'Total Sales',
+                            data: transactionCounts,
+                            backgroundColor: '#3B82F6',
+                            borderColor: '#2563EB',
+                            borderWidth: 1,
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    title: function(context) {
+                                        return fastMovingData[context[0].dataIndex].PartDescription;
+                                    },
+                                    label: function(context) {
+                                        const item = fastMovingData[context.dataIndex];
+                                        return [
+                                            'Sales: ' + context.parsed.y,
+                                            'Revenue: $' + (item.Revenue / 80).toLocaleString(),
+                                            'Part No: ' + item.PartNo
+                                        ];
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: {
+                                    color: '#F3F4F6'
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    display: false
+                                },
+                                ticks: {
+                                    maxRotation: 45
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Monthly Revenue Trend Line Chart
+            const monthlyRevenueCtx = document.getElementById('monthlyRevenueChart');
+            if (monthlyRevenueCtx) {
+                const monthlyData = {{ insights.monthly_revenue | tojson }};
+                const monthLabels = monthlyData.map(item => item.month);
+                const revenueValues = monthlyData.map(item => item.revenue);
+                const transactionValues = monthlyData.map(item => item.transactions);
+                
+                new Chart(monthlyRevenueCtx, {
+                    type: 'line',
+                    data: {
+                        labels: monthLabels,
+                        datasets: [{
+                            label: 'Revenue ($)',
+                            data: revenueValues,
+                            borderColor: '#10B981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.4,
+                            yAxisID: 'y'
+                        }, {
+                            label: 'Transactions',
+                            data: transactionValues,
+                            borderColor: '#3B82F6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            borderWidth: 3,
+                            fill: false,
+                            tension: 0.4,
+                            yAxisID: 'y1'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false,
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                                labels: {
+                                    usePointStyle: true,
+                                    padding: 20
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        if (context.datasetIndex === 0) {
+                                            return 'Revenue: $' + (context.parsed.y / 80).toLocaleString();
+                                        } else {
+                                            return 'Transactions: ' + context.parsed.y;
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: {
+                                    color: '#F3F4F6'
+                                }
+                            },
+                            y: {
+                                type: 'linear',
+                                display: true,
+                                position: 'left',
+                                grid: {
+                                    color: '#F3F4F6'
+                                },
+                                ticks: {
+                                    callback: function(value) {
+                                        return '$' + (value / 80).toLocaleString();
+                                    }
+                                }
+                            },
+                            y1: {
+                                type: 'linear',
+                                display: true,
+                                position: 'right',
+                                grid: {
+                                    drawOnChartArea: false,
+                                },
+                            }
+                        }
+                    }
+                });
+            }
+            {% endif %}
         });
     </script>
 </body>
