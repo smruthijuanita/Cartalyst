@@ -522,11 +522,20 @@ def api_chat():
 # --- Application Startup ---
 def initialize_app(app_instance):
     with app_instance.app_context():
+        # Load database for customer functionality
         logging.info("Loading database into RAG system...")
         if not rag_system.load_data_from_db('parts.db'):
-            logging.error("CRITICAL: Failed to load data.")
+            logging.error("CRITICAL: Failed to load database data.")
             return False
         logging.info(f"Database loaded. Total parts: {len(rag_system.parts_data)}")
+        
+        # Load Excel data for employee insights
+        logging.info("Loading Excel data for employee insights...")
+        if not rag_system.load_data_from_excel('model-data.xlsx'):
+            logging.warning("Failed to load Excel data. Employee insights will use database data.")
+        else:
+            logging.info(f"Excel data loaded. Total parts for insights: {len(rag_system.excel_parts_data)}")
+        
         return True
 
 if not initialize_app(app):
