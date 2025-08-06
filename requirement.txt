@@ -1,5 +1,7 @@
+
 flask
 groq
-sqlite3
 pandas
 openpyxl
+scikit-learn
+python-dotenv
