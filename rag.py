@@ -436,12 +436,10 @@ Always include these links when suggesting specific parts to help customers easi
             return "Sorry, I'm having trouble connecting right now."
 
     def get_employee_insights(self) -> Dict[str, Any]:
-        """Generates comprehensive business insights and analytics from the parts data."""
-        # Determine which data source to use: Excel if available, otherwise DB data
-        data_source = self.excel_parts_data if self.excel_parts_data else self.parts_data
-        
-        if not data_source:
-            logger.warning("No parts data available for insights")
+        """Generates comprehensive business insights and analytics from the Excel data only."""
+        # Use only Excel data for employee insights
+        if not self.excel_parts_data:
+            logger.error("No Excel data available for employee insights")
             return {
                 "total_inventory_value": 0,
                 "parts_per_supplier": {},
@@ -455,7 +453,8 @@ Always include these links when suggesting specific parts to help customers easi
                 "average_transaction_value": 0
             }
         
-        logger.info(f"Generating employee insights using {len(data_source)} parts from {'Excel' if self.excel_parts_data else 'Database'}.")
+        data_source = self.excel_parts_data
+        logger.info(f"Generating employee insights using {len(data_source)} parts from Excel data only.")
 
         try:
             # Use the relevant data_source for calculations
@@ -639,7 +638,7 @@ Always include these links when suggesting specific parts to help customers easi
             return "Others"
 
     def get_categorized_parts(self) -> Dict[str, List[PartRecord]]:
-        """Groups unique parts by the 5 main categories."""
+        """Groups unique parts by the 5 main categories for customer dashboard."""
         # Define the 5 main categories in order
         main_categories = [
             "Engine and Fuel",
@@ -652,8 +651,8 @@ Always include these links when suggesting specific parts to help customers easi
         categorized = {category: [] for category in main_categories}
         seen_parts = set()
 
-        # Use the excel_parts_data if available, otherwise use parts_data
-        data_to_categorize = self.excel_parts_data if self.excel_parts_data else self.parts_data
+        # Use database data for customer dashboard
+        data_to_categorize = self.parts_data
 
         for part in data_to_categorize:
             if part.PartNo not in seen_parts:

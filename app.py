@@ -243,9 +243,14 @@ def dashboard():
     is_employee = (session.get('user_role') == 'employee')
     try:
         if is_employee:
+            # Ensure Excel data is loaded for employee insights
+            if not rag_system.excel_parts_data:
+                flash('Employee dashboard requires Excel data to be loaded. Please contact administrator.', 'error')
+                return redirect(url_for('login'))
             insights = rag_system.get_employee_insights()
             return render_template('dashboard.html', is_employee=True, insights=insights)
         else:
+            # Customer dashboard uses database data
             categorized_parts = rag_system.get_categorized_parts()
             return render_template('dashboard.html', is_employee=False, categorized_parts=categorized_parts)
     except Exception as e:
@@ -529,12 +534,13 @@ def initialize_app(app_instance):
             return False
         logging.info(f"Database loaded. Total parts: {len(rag_system.parts_data)}")
         
-        # Load Excel data for employee insights
+        # Load Excel data for employee insights (mandatory)
         logging.info("Loading Excel data for employee insights...")
         if not rag_system.load_data_from_excel('model-data.xlsx'):
-            logging.warning("Failed to load Excel data. Employee insights will use database data.")
+            logging.error("CRITICAL: Failed to load Excel data. Employee insights will not work properly.")
+            return False
         else:
-            logging.info(f"Excel data loaded. Total parts for insights: {len(rag_system.excel_parts_data)}")
+            logging.info(f"Excel data loaded successfully. Total parts for insights: {len(rag_system.excel_parts_data)}")
         
         return True
 
