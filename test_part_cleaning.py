@@ -63,7 +63,7 @@ def test_with_real_database():
     categorized_parts = rag_system.get_categorized_parts()
     
     for category, parts in list(categorized_parts.items())[:3]:  # Show first 3 categories
-        print(f"\n🏷️  {category} Category:")
+        print(f"\n {category} Category:")
         print("-" * 30)
         
         for i, part in enumerate(parts[:5], 1):  # Show first 5 parts
