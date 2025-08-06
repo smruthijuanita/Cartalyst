@@ -3,3 +3,15 @@ modules = ["web", "python-3.12"]
 [nix]
 channel = "stable-25_05"
 packages = ["glibcLocales"]
+
+[workflows]
+runButton = "Run Flask App"
+
+[[workflows.workflow]]
+name = "Run Flask App"
+author = 45413670
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python app.py"

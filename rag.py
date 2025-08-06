@@ -22,17 +22,17 @@ logger = logging.getLogger(__name__)
 @dataclass(frozen=True)
 class PartRecord:
     id: int
-    TransactionID: int = 0 # Default value, not always present in Excel
-    Date: str = "" # Default value
-    CustomerID: str = "" # Default value
     PartNo: str
     Quantity: int
     Rate: float
-    TotalPrice: float = 0.0 # Default value
     PartDescription: str
     Category: str
     Source: str
     VehicleMake: str
+    TransactionID: int = 0 # Default value, not always present in Excel
+    Date: str = "" # Default value
+    CustomerID: str = "" # Default value
+    TotalPrice: float = 0.0 # Default value
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
