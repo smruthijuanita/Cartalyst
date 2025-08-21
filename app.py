@@ -6,6 +6,9 @@ import sqlite3
 from datetime import datetime
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for, flash
 from rag import PartsRAG
+import os
+import json
+from werkzeug.utils import secure_filename
 
 # --- Basic Configuration ---
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -13,6 +16,14 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 # --- Flask Application ---
 app = Flask(__name__)
 app.secret_key = 'dev-secret-key-change-me' 
+
+# Image configuration
+app.config['UPLOAD_FOLDER'] = 'static/images/parts'
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 
 PARTS_PER_PAGE = 12
 
@@ -27,7 +38,39 @@ DEFAULT_PART_IMAGES = {
     'default': 'https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?w=400&h=300&fit=crop'
 }
 
-def get_part_image_url(part_category):
+def get_part_image_url(part_category, part_no=None):
+    """Get image URL for a part, checking local files first."""
+    
+    # Try to find image based on part number
+    if part_no:
+        possible_names = [
+            f"{part_no.lower()}.jpg",
+            f"{part_no.lower()}.png"
+        ]
+        
+        for name in possible_names:
+            full_path = os.path.join('static/images/parts', name)
+            if os.path.exists(full_path):
+                return f'/static/images/parts/{name}'
+    
+    # Try category-based image (like your brake_pad.jpg)
+    if part_category:
+        category_clean = part_category.lower().replace(' ', '_')
+        possible_names = [
+            f"{category_clean}.jpg",
+            f"{category_clean}.png"
+        ]
+        
+        for name in possible_names:
+            full_path = os.path.join('static/images/parts', name)
+            if os.path.exists(full_path):
+                return f'/static/images/parts/{name}'
+    
+    # Fallback to default
+    if os.path.exists('static/images/parts/default.jpg'):
+        return '/static/images/parts/default.jpg'
+    
+    # Your original Unsplash fallback
     category_key = next((key for key in DEFAULT_PART_IMAGES if key in part_category.lower()), 'default')
     return DEFAULT_PART_IMAGES[category_key]
 
@@ -257,6 +300,29 @@ def dashboard():
         logging.error(f"Error loading dashboard: {e}")
         flash('Error loading dashboard. Please try again.', 'error')
         return redirect(url_for('login'))
+# --for images--
+def get_unique_parts():
+    conn = sqlite3.connect('parts.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT DISTINCT PartDescription FROM parts")
+    parts = [row[0] for row in cursor.fetchall()]
+    conn.close()
+    return parts
+
+@app.route("/parts")
+def show_parts():
+    conn = get_db_connection()
+    parts = conn.execute("SELECT DISTINCT PartNo, PartDescription, Category FROM parts").fetchall()
+    conn.close()
+    
+    parts_with_images = []
+    for part in parts:
+        part_dict = dict(part)
+        part_dict['ImageURL'] = get_part_image_url(part_dict['Category'], part_dict['PartNo'])
+        parts_with_images.append(part_dict)
+
+    return render_template("parts.html", parts=parts_with_images)
+
 
 @app.route('/view_parts_by_category/<category_name>')
 def view_parts_by_category(category_name):
@@ -284,7 +350,7 @@ def view_parts_by_category(category_name):
         parts_with_images = []
         for part in parts_to_display:
             part_dict = part.to_dict()
-            part_dict['ImageURL'] = get_part_image_url(part.Category)
+            part_dict['ImageURL'] = get_part_image_url(part.Category, part.PartNo)
             # Use cleaned description for better presentation
             part_dict['CleanedDescription'] = part.cleaned_description
             parts_with_images.append(part_dict)
@@ -306,7 +372,7 @@ def view_part(part_no):
         flash('Part not found.', 'error')
         return redirect(url_for('dashboard'))
     
-    part['ImageURL'] = get_part_image_url(part['Category'])
+    part['ImageURL'] = get_part_image_url(part['Category'], part['PartNo'])
     # Add cleaned description for better presentation
     part['CleanedDescription'] = rag_system.clean_part_name(part['PartDescription'])
     return render_template('part_detail.html', part=part)
@@ -543,7 +609,50 @@ def initialize_app(app_instance):
             logging.info(f"Excel data loaded successfully. Total parts for insights: {len(rag_system.excel_parts_data)}")
         
         return True
-
+#----
+# Add this to your app.py
+@app.route('/debug-images')
+def debug_images():
+    import os
+    
+    # Check what files exist
+    image_dir = 'static/images/parts'
+    files = []
+    if os.path.exists(image_dir):
+        files = os.listdir(image_dir)
+    
+    # Test your function with actual data
+    conn = get_db_connection()
+    parts = conn.execute("SELECT PartNo, Category, PartDescription FROM parts LIMIT 5").fetchall()
+    conn.close()
+    
+    debug_html = f"""
+    <h2>Image Debug Information</h2>
+    <h3>Files in {image_dir}:</h3>
+    <ul>
+    """
+    
+    for file in files:
+        debug_html += f"<li>{file}</li>"
+    
+    debug_html += "</ul><h3>Sample Parts and Generated URLs:</h3>"
+    
+    for part in parts:
+        part_dict = dict(part)
+        url = get_part_image_url(part_dict['Category'], part_dict['PartNo'])
+        debug_html += f"""
+        <div style="border: 1px solid #ccc; margin: 10px; padding: 10px;">
+            <strong>Part:</strong> {part_dict['PartDescription']}<br>
+            <strong>Part No:</strong> {part_dict['PartNo']}<br>
+            <strong>Category:</strong> {part_dict['Category']}<br>
+            <strong>Generated URL:</strong> {url}<br>
+            <strong>Test Image:</strong> <br>
+            <img src="{url}" alt="Test" style="max-width: 200px; border: 1px solid red;">
+        </div>
+        """
+    
+    return debug_html
+#-----
 if not initialize_app(app):
     exit(1)
 
